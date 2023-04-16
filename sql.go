@@ -245,3 +245,38 @@ func ToSqlGroupSlice(query Query, translations SqlTranslations) ([]string, error
 
 	return fields, nil
 }
+
+// ToSqlOrderBy converts a Query to a SQL ORDER BY statement.
+func ToSqlOrderBy(query Query, translations SqlTranslations) (string, error) {
+	fields, err := ToSqlOrderBySlice(query, translations)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(fields, ", "), nil
+}
+
+// ToSqlOrderBySlice converts a Query to a slice of SQL ORDER BY statements.
+func ToSqlOrderBySlice(query Query, translations SqlTranslations) ([]string, error) {
+	fields := []string{}
+
+	translations = sanitizeSqlTranslation(translations)
+
+	for _, field := range query.Sort {
+		translation, ok := translations[field.Field]
+		if !ok {
+			return nil, ErrInvalidField
+		}
+
+		col := translation.Column
+		if field.Reverse {
+			col = col + " DESC"
+		} else {
+			col = col + " ASC"
+		}
+
+		fields = append(fields, col)
+	}
+
+	return fields, nil
+}

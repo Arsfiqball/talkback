@@ -279,3 +279,56 @@ func TestToSqlGroup(t *testing.T) {
 		})
 	}
 }
+
+func TestToSqlOrderBy(t *testing.T) {
+	type scenarioT struct {
+		query        Query
+		translations SqlTranslations
+		statement    string
+		err          error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Sort: []Sort{
+					{"field1", false},
+					{"field2", true},
+				},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{},
+				"field2": SqlFieldTranslation{},
+			},
+			statement: "field1 ASC, field2 DESC",
+			err:       nil,
+		},
+		{
+			query: Query{
+				Sort: []Sort{
+					{"field1", false},
+					{"field2", true},
+				},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{
+					Column: "ex.field1",
+				},
+				"field2": SqlFieldTranslation{
+					Column: "ex.field2",
+				},
+			},
+			statement: "ex.field1 ASC, ex.field2 DESC",
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(scenario.statement, func(t *testing.T) {
+			statement, err := ToSqlOrderBy(scenario.query, scenario.translations)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
