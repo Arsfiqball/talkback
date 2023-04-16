@@ -280,3 +280,13 @@ func ToSqlOrderBySlice(query Query, translations SqlTranslations) ([]string, err
 
 	return fields, nil
 }
+
+// ToSqlLimit converts a Query to a SQL LIMIT statement.
+func ToSqlLimit(query Query) (int, error) {
+	return query.Limit, nil
+}
+
+// ToSqlOffset converts a Query to a SQL OFFSET statement.
+func ToSqlOffset(query Query) (int, error) {
+	return query.Skip, nil
+}

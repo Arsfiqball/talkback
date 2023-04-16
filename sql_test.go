@@ -1,6 +1,7 @@
 package talkback
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -326,6 +327,74 @@ func TestToSqlOrderBy(t *testing.T) {
 	for _, scenario := range scenarios {
 		t.Run(scenario.statement, func(t *testing.T) {
 			statement, err := ToSqlOrderBy(scenario.query, scenario.translations)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
+
+func TestToSqlLimit(t *testing.T) {
+	type scenarioT struct {
+		query     Query
+		statement int
+		err       error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Limit: 10,
+			},
+			statement: 10,
+			err:       nil,
+		},
+		{
+			query: Query{
+				Limit: 0,
+			},
+			statement: 0,
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(strconv.Itoa(scenario.statement), func(t *testing.T) {
+			statement, err := ToSqlLimit(scenario.query)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
+
+func TestToSqlOffset(t *testing.T) {
+	type scenarioT struct {
+		query     Query
+		statement int
+		err       error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Skip: 10,
+			},
+			statement: 10,
+			err:       nil,
+		},
+		{
+			query: Query{
+				Skip: 0,
+			},
+			statement: 0,
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(strconv.Itoa(scenario.statement), func(t *testing.T) {
+			statement, err := ToSqlOffset(scenario.query)
 
 			assert.Equal(t, scenario.statement, statement, "statement should be equal")
 			assert.Equal(t, scenario.err, err, "err should be equal")
