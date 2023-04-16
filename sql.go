@@ -309,3 +309,44 @@ func ToSqlPreload(query Query, preloadable SqlPreloadable) ([]string, error) {
 
 	return preloads, nil
 }
+
+func ToSql(table string, query Query, translations SqlTranslations) (string, []interface{}, error) {
+	cselect, err := ToSqlSelect(query, translations)
+	if err != nil {
+		return "", nil, err
+	}
+
+	cwhere, cwhereargs, err := ToSqlWhere(query, translations)
+	if err != nil {
+		return "", nil, err
+	}
+
+	cgroup, err := ToSqlGroup(query, translations)
+	if err != nil {
+		return "", nil, err
+	}
+
+	corder, err := ToSqlOrderBy(query, translations)
+	if err != nil {
+		return "", nil, err
+	}
+
+	climit, err := ToSqlLimit(query)
+	if err != nil {
+		return "", nil, err
+	}
+
+	coffset, err := ToSqlOffset(query)
+	if err != nil {
+		return "", nil, err
+	}
+
+	sql := "SELECT " + cselect + " FROM " + table +
+		" WHERE " + cwhere +
+		" GROUP BY " + cgroup +
+		" ORDER BY " + corder +
+		" LIMIT " + strconv.Itoa(climit) +
+		" OFFSET " + strconv.Itoa(coffset)
+
+	return sql, cwhereargs, nil
+}

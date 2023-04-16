@@ -434,3 +434,52 @@ func TestToSqlPreload(t *testing.T) {
 		})
 	}
 }
+
+func TestToSql(t *testing.T) {
+	type scenarioT struct {
+		query        Query
+		translations SqlTranslations
+		statement    string
+		args         []interface{}
+		err          error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Conditions: []Condition{
+					{"field1", "eq", []string{"value1"}},
+					{"field2", "ne", []string{"value2"}},
+				},
+				Group: []string{"field1", "field2"},
+				Sort: []Sort{
+					{"field1", false},
+					{"field2", true},
+				},
+				Limit: 10,
+				Skip:  10,
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{
+					Alias: "alias1",
+				},
+				"field2": SqlFieldTranslation{
+					Column: "ex.field2",
+				},
+			},
+			statement: "SELECT field1 AS alias1, ex.field2 AS field2 FROM somewhere WHERE field1 = ? AND ex.field2 != ? GROUP BY field1, ex.field2 ORDER BY field1 ASC, ex.field2 DESC LIMIT 10 OFFSET 10",
+			args:      []interface{}{"value1", "value2"},
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(scenario.statement, func(t *testing.T) {
+			statement, args, err := ToSql("somewhere", scenario.query, scenario.translations)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.args, args, "args should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
