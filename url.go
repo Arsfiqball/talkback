@@ -2,6 +2,7 @@ package talkback
 
 import (
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -66,6 +67,24 @@ func FromURLValues(params url.Values) (Query, error) {
 				Field:   field,
 				Reverse: reverse,
 			})
+		}
+	}
+
+	if limit := params.Get("limit"); limit != "" {
+		var err error
+
+		query.Limit, err = strconv.Atoi(limit)
+		if err != nil {
+			return Query{}, err
+		}
+	}
+
+	if skip := params.Get("skip"); skip != "" {
+		var err error
+
+		query.Skip, err = strconv.Atoi(skip)
+		if err != nil {
+			return Query{}, err
 		}
 	}
 
