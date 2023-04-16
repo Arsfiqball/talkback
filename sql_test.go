@@ -51,15 +51,15 @@ func TestToSqlWhere(t *testing.T) {
 			},
 			translations: SqlTranslations{
 				"field1": SqlFieldTranslation{
-					Condition:     "field1",
+					Column:        "field1",
 					TypeConverter: SqlConvertString,
 				},
 				"field2": SqlFieldTranslation{
-					Condition:     "field2",
+					Column:        "field2",
 					TypeConverter: SqlConvertTime,
 				},
 				"field3": SqlFieldTranslation{
-					Condition: "field3",
+					Column: "field3",
 				},
 			},
 			statement: "field1 = ? AND field2 != ? AND field3 IS NULL",
@@ -77,19 +77,19 @@ func TestToSqlWhere(t *testing.T) {
 			},
 			translations: SqlTranslations{
 				"field1": SqlFieldTranslation{
-					Condition:     "field1",
+					Column:        "field1",
 					TypeConverter: SqlConvertInt,
 				},
 				"field2": SqlFieldTranslation{
-					Condition:     "field2",
+					Column:        "field2",
 					TypeConverter: SqlConvertDate,
 				},
 				"field3": SqlFieldTranslation{
-					Condition:     "field3",
+					Column:        "field3",
 					TypeConverter: SqlConvertBool,
 				},
 				"field4": SqlFieldTranslation{
-					Condition:     "field4",
+					Column:        "field4",
 					TypeConverter: SqlConvertFloat,
 				},
 			},
@@ -113,16 +113,16 @@ func TestToSqlWhere(t *testing.T) {
 			},
 			translations: SqlTranslations{
 				"field1": SqlFieldTranslation{
-					Condition: "field1",
+					Column: "field1",
 				},
 				"field2": SqlFieldTranslation{
-					Condition: "field2",
+					Column: "field2",
 				},
 				"field3": SqlFieldTranslation{
-					Condition: "field3",
+					Column: "field3",
 				},
 				"field4": SqlFieldTranslation{
-					Condition: "field4",
+					Column: "field4",
 				},
 			},
 			statement: "CAST(field1 AS TEXT) ILIKE ? AND CAST(field2 AS TEXT) NOT ILIKE ? AND CAST(field3 AS TEXT) LIKE ? AND CAST(field4 AS TEXT) NOT LIKE ?",
@@ -143,11 +143,11 @@ func TestToSqlWhere(t *testing.T) {
 			},
 			translations: SqlTranslations{
 				"field1": SqlFieldTranslation{
-					Condition:     "field1",
+					Column:        "field1",
 					TypeConverter: SqlConvertDateTime,
 				},
 				"field2": SqlFieldTranslation{
-					Condition:     "field2",
+					Column:        "field2",
 					TypeConverter: SqlConvertISO8601,
 				},
 			},
@@ -166,6 +166,68 @@ func TestToSqlWhere(t *testing.T) {
 
 			assert.Equal(t, scenario.statement, statement, "statement should be equal")
 			assert.Equal(t, scenario.args, args, "args should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
+
+func TestToSqlSelect(t *testing.T) {
+	type scenarioT struct {
+		query        Query
+		translations SqlTranslations
+		statement    string
+		err          error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Group: []string{"field1", "field2"},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{},
+				"field2": SqlFieldTranslation{},
+			},
+			statement: "field1, field2",
+			err:       nil,
+		},
+		{
+			query: Query{
+				Group: []string{"field1", "field2"},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{
+					Column: "ex.field1",
+				},
+				"field2": SqlFieldTranslation{
+					Column: "ex.field2",
+				},
+			},
+			statement: "ex.field1 AS field1, ex.field2 AS field2",
+			err:       nil,
+		},
+		{
+			query: Query{
+				Accumulator: []string{"field1", "field2"},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{
+					Alias: "alias1",
+				},
+				"field2": SqlFieldTranslation{
+					Alias: "alias2",
+				},
+			},
+			statement: "field1 AS alias1, field2 AS alias2",
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(scenario.statement, func(t *testing.T) {
+			statement, err := ToSqlSelect(scenario.query, scenario.translations)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
 			assert.Equal(t, scenario.err, err, "err should be equal")
 		})
 	}

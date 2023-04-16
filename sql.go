@@ -8,7 +8,7 @@ import (
 
 // SqlFieldTranslation is a translation from a field name to a SQL field.
 type SqlFieldTranslation struct {
-	Condition     string
+	Column        string
 	Alias         string
 	TypeConverter func(value string) (interface{}, error)
 }
@@ -20,6 +20,8 @@ type SqlTranslations map[string]SqlFieldTranslation
 func ToSqlWhere(query Query, translations SqlTranslations) (string, []interface{}, error) {
 	statements := []string{}
 	args := []interface{}{}
+
+	translations = sanitizeSqlTranslation(translations)
 
 	for _, cond := range query.Conditions {
 		translation, ok := translations[cond.Field]
@@ -40,6 +42,25 @@ func ToSqlWhere(query Query, translations SqlTranslations) (string, []interface{
 	}
 
 	return strings.Join(statements, " AND "), args, nil
+}
+
+// sanitizeSqlTranslation sanitizes a SqlTranslations map.
+func sanitizeSqlTranslation(translations SqlTranslations) SqlTranslations {
+	result := SqlTranslations{}
+
+	for field, translation := range translations {
+		if translation.Column == "" {
+			translation.Column = field
+		}
+
+		if translation.Alias == "" {
+			translation.Alias = field
+		}
+
+		result[field] = translation
+	}
+
+	return result
 }
 
 // valueToSql converts a value to a SQL argument.
@@ -83,7 +104,7 @@ func conditionToSql(translation SqlFieldTranslation, cond Condition) (string, in
 
 	firstValue := sliceValue[0]
 	likeValue := "%" + cond.Values[0] + "%"
-	column := translation.Condition
+	column := translation.Column
 
 	switch cond.Op {
 	case OpIsNull:
@@ -109,9 +130,9 @@ func conditionToSql(translation SqlFieldTranslation, cond Condition) (string, in
 	case OpNcontains:
 		return castAsText(column) + " NOT LIKE ?", likeValue, nil
 	case OpIn:
-		return translation.Condition + " IN (?)", sliceValue, nil
+		return translation.Column + " IN (?)", sliceValue, nil
 	case OpNin:
-		return translation.Condition + " NOT IN (?)", sliceValue, nil
+		return translation.Column + " NOT IN (?)", sliceValue, nil
 	default:
 		return "", nil, ErrInvalidOp
 	}
@@ -160,4 +181,39 @@ func SqlConvertTime(value string) (interface{}, error) {
 // SqlConvertString is a TypeConverter that converts a string to a string.
 func SqlConvertISO8601(value string) (interface{}, error) {
 	return time.Parse(time.RFC3339, value)
+}
+
+// ToSqlSelect converts a Query to a SQL SELECT statement.
+func ToSqlSelect(query Query, translations SqlTranslations) (string, error) {
+	fields, err := ToSqlSelectSlice(query, translations)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(fields, ", "), nil
+}
+
+// ToSqlSelectSlice converts a Query to a slice of SQL SELECT statements.
+func ToSqlSelectSlice(query Query, translations SqlTranslations) ([]string, error) {
+	fields := []string{}
+	qSelects := query.Group
+	qSelects = append(qSelects, query.Accumulator...)
+
+	translations = sanitizeSqlTranslation(translations)
+
+	for _, field := range qSelects {
+		translation, ok := translations[field]
+		if !ok {
+			return nil, ErrInvalidField
+		}
+
+		col := translation.Column
+		if translation.Alias != translation.Column {
+			col = col + " AS " + translation.Alias
+		}
+
+		fields = append(fields, col)
+	}
+
+	return fields, nil
 }
