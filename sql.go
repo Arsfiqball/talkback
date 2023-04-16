@@ -290,3 +290,22 @@ func ToSqlLimit(query Query) (int, error) {
 func ToSqlOffset(query Query) (int, error) {
 	return query.Skip, nil
 }
+
+// SqlPreloadable is a map of preloads (key) and their corresponding model (value).
+type SqlPreloadable map[string]string
+
+// ToSqlPreload converts a Query to a SQL preload statement.
+func ToSqlPreload(query Query, preloadable SqlPreloadable) ([]string, error) {
+	preloads := []string{}
+
+	for _, preload := range query.With {
+		model, ok := preloadable[preload]
+		if !ok {
+			return nil, ErrInvalidPreload
+		}
+
+		preloads = append(preloads, model)
+	}
+
+	return preloads, nil
+}

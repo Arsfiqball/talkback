@@ -2,6 +2,7 @@ package talkback
 
 import (
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -397,6 +398,38 @@ func TestToSqlOffset(t *testing.T) {
 			statement, err := ToSqlOffset(scenario.query)
 
 			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}
+
+func TestToSqlPreload(t *testing.T) {
+	type scenarioT struct {
+		query       Query
+		preloadable SqlPreloadable
+		preloads    []string
+		err         error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				With: []string{"field1", "field2"},
+			},
+			preloadable: SqlPreloadable{
+				"field1": "Field1",
+				"field2": "Field2",
+			},
+			preloads: []string{"Field1", "Field2"},
+			err:      nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(strings.Join(scenario.preloads, ","), func(t *testing.T) {
+			preloads, err := ToSqlPreload(scenario.query, scenario.preloadable)
+
+			assert.Equal(t, scenario.preloads, preloads, "preloads should be equal")
 			assert.Equal(t, scenario.err, err, "err should be equal")
 		})
 	}
