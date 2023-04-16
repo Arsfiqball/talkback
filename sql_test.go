@@ -232,3 +232,50 @@ func TestToSqlSelect(t *testing.T) {
 		})
 	}
 }
+
+func TestToSqlGroup(t *testing.T) {
+	type scenarioT struct {
+		query        Query
+		translations SqlTranslations
+		statement    string
+		err          error
+	}
+
+	scenarios := []scenarioT{
+		{
+			query: Query{
+				Group: []string{"field1", "field2"},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{},
+				"field2": SqlFieldTranslation{},
+			},
+			statement: "field1, field2",
+			err:       nil,
+		},
+		{
+			query: Query{
+				Group: []string{"field1", "field2"},
+			},
+			translations: SqlTranslations{
+				"field1": SqlFieldTranslation{
+					Column: "ex.field1",
+				},
+				"field2": SqlFieldTranslation{
+					Column: "ex.field2",
+				},
+			},
+			statement: "ex.field1, ex.field2",
+			err:       nil,
+		},
+	}
+
+	for _, scenario := range scenarios {
+		t.Run(scenario.statement, func(t *testing.T) {
+			statement, err := ToSqlGroup(scenario.query, scenario.translations)
+
+			assert.Equal(t, scenario.statement, statement, "statement should be equal")
+			assert.Equal(t, scenario.err, err, "err should be equal")
+		})
+	}
+}

@@ -217,3 +217,31 @@ func ToSqlSelectSlice(query Query, translations SqlTranslations) ([]string, erro
 
 	return fields, nil
 }
+
+// ToSqlGroup converts a Query to a SQL GROUP BY statement.
+func ToSqlGroup(query Query, translations SqlTranslations) (string, error) {
+	fields, err := ToSqlGroupSlice(query, translations)
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(fields, ", "), nil
+}
+
+// ToSqlGroupSlice converts a Query to a slice of SQL GROUP BY statements.
+func ToSqlGroupSlice(query Query, translations SqlTranslations) ([]string, error) {
+	fields := []string{}
+
+	translations = sanitizeSqlTranslation(translations)
+
+	for _, field := range query.Group {
+		translation, ok := translations[field]
+		if !ok {
+			return nil, ErrInvalidField
+		}
+
+		fields = append(fields, translation.Column)
+	}
+
+	return fields, nil
+}
