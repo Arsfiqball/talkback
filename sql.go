@@ -350,3 +350,64 @@ func ToSql(table string, query Query, translations SqlTranslations) (string, []i
 
 	return sql, cwhereargs, nil
 }
+
+// SqlPlan is a plan for executing a query.
+type SqlPlan struct {
+	Select    string
+	Where     string
+	WhereArgs []interface{}
+	Group     string
+	Order     string
+	Limit     int
+	Offset    int
+	Preload   []string
+}
+
+// ToSqlPlan converts a Query to a SqlPlan.
+func ToSqlPlan(query Query, translations SqlTranslations, preloadable SqlPreloadable) (SqlPlan, error) {
+	cselect, err := ToSqlSelect(query, translations)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	cwhere, cwhereargs, err := ToSqlWhere(query, translations)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	cgroup, err := ToSqlGroup(query, translations)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	corder, err := ToSqlOrderBy(query, translations)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	climit, err := ToSqlLimit(query)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	coffset, err := ToSqlOffset(query)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	cpreload, err := ToSqlPreload(query, preloadable)
+	if err != nil {
+		return SqlPlan{}, err
+	}
+
+	return SqlPlan{
+		Select:    cselect,
+		Where:     cwhere,
+		WhereArgs: cwhereargs,
+		Group:     cgroup,
+		Order:     corder,
+		Limit:     climit,
+		Offset:    coffset,
+		Preload:   cpreload,
+	}, nil
+}
