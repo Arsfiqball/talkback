@@ -2,13 +2,14 @@
 
 Simplify the way to implement query object pattern to your Go app.
 
-
 Install:
+
 ```sh
-go get -u github.com/Arsfiqball/talkback-lancer
+go get -u github.com/Arsfiqball/talkback
 ```
 
 Use:
+
 ```go
 func main() {
 	urlQS := "field1_eq=value1&field2_ne=value2&field3_isnull=true&group=field1&group=field2&sort=field1&sort=-field2&limit=10&skip=10"

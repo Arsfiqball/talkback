@@ -1,4 +1,4 @@
-module github.com/Arsfiqball/talkback-lancer
+module github.com/Arsfiqball/talkback
 
 go 1.19
 
